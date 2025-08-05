@@ -6,6 +6,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import json
 import selects
+import datetime
 
 load_dotenv()
 TOKEN: Final[str] = os.getenv('DISCORD_TOKEN')
@@ -140,6 +141,8 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             susMessageChannelIDs.append(i['channelID'])
     
     deletedMessages = []
+    timeoutError = False
+    timeoutErrorMessage = None
     if len(susMessageChannelIDs) != 0: # If the list is not empty,
         for i in susMessageChannelIDs: # Removes duplicate channels from the list
             if susMessageChannelIDs.count(i) > 1:
@@ -156,11 +159,19 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                     messageToDelete: Message = await channel.fetch_message(b)
                     deletedMessages.append(f'{messageToDelete.content}')
                     await messageToDelete.delete()
+                    if messageToDelete.author.is_timed_out() == False:
+                        try:
+                            await messageToDelete.author.timeout(datetime.timedelta(1))
+                        except:
+                            timeoutError = True
+                            timeoutErrorMessage = messageToDelete
                 except:
                     pass
         logChannel = message.guild.get_channel(1401253003822104739) # Gets the channel to put the logs into
         cleaned = str(deletedMessages).strip('[').strip(']').replace("'", "") # Cleans the deleted messages list
-        await logChannel.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"') # Creates a log for all deleted messages
+        await logChannel.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
+        if timeoutError == True:
+            await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This could be due to insufficient permissions, or {timeoutErrorMessage.author.display_name} being higher ranked.\n-# If you think this is a mistake, please write a bug report using /support')
 
 @bot.event
 async def on_ready():
