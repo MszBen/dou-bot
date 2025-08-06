@@ -189,7 +189,7 @@ async def support(interaction: discord.Interaction):
         if i.permissions.administrator:
             isadmin = True
     if isadmin == False:
-        await interaction.response.send_message(f'{interaction.user.mention}, if you need support, please contact an admin!')
+        await interaction.response.send_message(f'{interaction.user.mention}, if you need support, please contact an admin!', ephemeral=True)
         return
     else:
         await interaction.response.send_message(view=selects.supportView(),ephemeral=True)
@@ -252,6 +252,21 @@ async def removechannel(interaction: discord.Interaction, channel: discord.TextC
                 await interaction.response.send_message(f'{channel.mention} was removed from the protected channel list!', ephemeral=True)
         else:
             await interaction.response.send_message(f'{channel.mention} is not in the protected server list!', ephemeral=True)
+
+@bot.tree.command(name='socials', description='Get all socials of Douthepuppy')
+async def socials(interaction: discord.Interaction):
+    embeds = []
+    twitchEmbed = discord.Embed(title='* Twitch *', description='Musician turned streamer -18, UK, Mostly play horror games and Shooters (Eg, The Forest Franchise, Marvel Rivals, Valorant, Roblox, etc.)', color=discord.Color.from_rgb(90, 62, 133), timestamp=datetime.datetime(2025, 8, 6, 15, 16))
+    twitchEmbed.set_footer(text='This is up-to-date as of:')
+    twitchEmbed.add_field(name=' ', value='You can visit Douthepuppy\'s Twitch channel [here](https://www.twitch.tv/douthepuppy).')
+    twitchEmbed.set_thumbnail(url='https://images.seeklogo.com/logo-png/27/2/twitch-logo-png_seeklogo-274042.png')
+    embeds.append(twitchEmbed)
+    YTEmbed = discord.Embed(title='* YouTube *', description='Guitarist and no life for practically any game', color=discord.Color.from_rgb(255, 0, 0), timestamp=datetime.datetime(2025, 8, 6, 15, 16))
+    YTEmbed.set_footer(text='This is up-to-date as of:')
+    YTEmbed.add_field(name=' ', value='You can visit Douthepuppy\'s YouTube channel [here](https://www.youtube.com/@douthepuppy).')
+    YTEmbed.set_thumbnail(url='https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png')
+    embeds.append(YTEmbed)
+    await interaction.response.send_message(embeds=embeds, ephemeral=True)
 
 def main() -> None:
     bot.run(TOKEN)
