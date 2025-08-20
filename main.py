@@ -16,6 +16,8 @@ basepath = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
 channelsFile = os.path.join(basepath, 'channels.json')
 messagesFile = os.path.join(basepath, 'messages.json')
 
+logChannelID = 1407764620483104950
+
 intents: Intents = Intents.default()
 intents.message_content = True
 intents.members = True
@@ -167,7 +169,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                             timeoutErrorMessage = messageToDelete
                 except:
                     pass
-        logChannel = message.guild.get_channel(1401253003822104739) # Gets the channel to put the logs into
+        logChannel = message.guild.get_channel(logChannelID) # Gets the channel to put the logs into
         cleaned = str(deletedMessages).strip('[').strip(']').replace("'", "") # Cleans the deleted messages list
         await logChannel.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
         if timeoutError == True:
@@ -227,6 +229,9 @@ async def addchannel(interaction: discord.Interaction, channel: discord.TextChan
                 json.dump(channelsData, f)
                 f.close
                 await interaction.response.send_message(f'{channel.mention} was added to the protected channel list!', ephemeral=True)
+                if interaction.user.id != 551056526777909259:
+                    logChannel = await interaction.client.fetch_channel(logChannelID)
+                    await logChannel.send(f'"{interaction.user.mention}" added "{channel.mention}" to the protected channel list!\n-# If this was a mistake, you can use /removechannel to undo this action.')
         else:
             await interaction.response.send_message(f'{channel.mention} is already in the protected server list!', ephemeral=True)
 
@@ -250,8 +255,32 @@ async def removechannel(interaction: discord.Interaction, channel: discord.TextC
                 json.dump(channelsData, f)
                 f.close
                 await interaction.response.send_message(f'{channel.mention} was removed from the protected channel list!', ephemeral=True)
+                if interaction.user.id != 551056526777909259:
+                    logChannel = await interaction.client.fetch_channel(logChannelID)
+                    await logChannel.send(f'"{interaction.user.mention}" removed "{channel.mention}" from the protected channel list!\n-# If this was a mistake, you can use /removechannel to undo this action.')
         else:
             await interaction.response.send_message(f'{channel.mention} is not in the protected server list!', ephemeral=True)
+
+@bot.tree.command(name='protchannels', description='Lists all protected channels')
+async def protchannels(interaction: discord.Interaction):
+    isadmin = False
+    for i in interaction.user.roles:
+        if i.permissions.administrator:
+            isadmin = True
+    if isadmin == False:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+        return
+    else:
+        with open(channelsFile, 'r') as f:
+            channelsData: list = json.load(f)
+            f.close()
+        guildProtChannels = []
+        for i in channelsData:
+            channel = await interaction.client.fetch_channel(i)
+            if channel != None:
+                guildProtChannels.append(channel.name)
+        cleaned = str(guildProtChannels).strip('[').strip(']').replace("'", "")
+        await interaction.response.send_message(f'All protected channels (in this guild): {cleaned}', ephemeral=True)
 
 @bot.tree.command(name='socials', description='Get all socials of Douthepuppy')
 async def socials(interaction: discord.Interaction):
