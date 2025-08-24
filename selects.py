@@ -8,7 +8,7 @@ class supportSelect(discord.ui.Select):
             discord.SelectOption(label='Bot Info', emoji='ℹ'),
             discord.SelectOption(label='Bug Report', emoji='✉')
         ]
-        super().__init__(placeholder='Pick what kind of support you need!', min_values=1, max_values=1, options=options)
+        super().__init__(placeholder='How can I help you today?', min_values=1, max_values=1, options=options)
     
     async def callback(self, interaction: discord.Interaction):
         selection = self.values[0].lower()

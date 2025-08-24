@@ -17,6 +17,7 @@ channelsFile = os.path.join(basepath, 'channels.json')
 messagesFile = os.path.join(basepath, 'messages.json')
 
 logChannelID = 1407764620483104950
+devID = 551056526777909259
 
 intents: Intents = Intents.default()
 intents.message_content = True
@@ -61,59 +62,60 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             'message3id': 'none'
         }) # Adds the empty dictionary to the data list
     for i in messagesData: # For channels in messages.json,
-        if i['channelID'] == str(message.channel.id): # If the channel ID is the same as the message's channel ID,
-            if i['message1content'] != 'none': # If there is nothing logged for the first message,
-                if i['message2content'] != 'none': # If there is nothing logged for the second message,
-                    if i['message3content'] != 'none': # If there is nothing logged for the third message,
-                        data.append({
-                            'channelID': f'{message.channel.id}',
-                            'message1content': f'{messageContent}',
-                            'message1id': f'{message.id}',
-                            'message2content': f'{i["message1content"]}',
-                            'message2id': f'{i["message1id"]}',
-                            'message3content': f'{i["message2content"]}',
-                            'message3id': f'{i["message2id"]}'
-                        }) # Adds the corresponding dictionary to the data list
+        if i['channelID'] in channelsData:
+            if i['channelID'] == str(message.channel.id): # If the channel ID is the same as the message's channel ID,
+                if i['message1content'] != 'none': # If there is nothing logged for the first message,
+                    if i['message2content'] != 'none': # If there is nothing logged for the second message,
+                        if i['message3content'] != 'none': # If there is nothing logged for the third message,
+                            data.append({
+                                'channelID': f'{message.channel.id}',
+                                'message1content': f'{messageContent}',
+                                'message1id': f'{message.id}',
+                                'message2content': f'{i["message1content"]}',
+                                'message2id': f'{i["message1id"]}',
+                                'message3content': f'{i["message2content"]}',
+                                'message3id': f'{i["message2id"]}'
+                            }) # Adds the corresponding dictionary to the data list
+                        else:
+                            data.append({
+                                'channelID': f'{message.channel.id}',
+                                'message1content': f'{i["message1content"]}',
+                                'message1id': f'{i["message1id"]}',
+                                'message2content': f'{i["message2content"]}',
+                                'message2id': f'{i["message2id"]}',
+                                'message3content': f'{messageContent}',
+                                'message3id': f'{message.id}'
+                            }) # Adds the corresponding dictionary to the data list
                     else:
                         data.append({
                             'channelID': f'{message.channel.id}',
                             'message1content': f'{i["message1content"]}',
                             'message1id': f'{i["message1id"]}',
-                            'message2content': f'{i["message2content"]}',
-                            'message2id': f'{i["message2id"]}',
-                            'message3content': f'{messageContent}',
-                            'message3id': f'{message.id}'
+                            'message2content': f'{messageContent}',
+                            'message2id': f'{message.id}',
+                            'message3content': 'none',
+                            'message3id': 'none'
                         }) # Adds the corresponding dictionary to the data list
                 else:
                     data.append({
                         'channelID': f'{message.channel.id}',
-                        'message1content': f'{i["message1content"]}',
-                        'message1id': f'{i["message1id"]}',
-                        'message2content': f'{messageContent}',
-                        'message2id': f'{message.id}',
+                        'message1content': f'{messageContent}',
+                        'message1id': f'{message.id}',
+                        'message2content': 'none',
+                        'message2id': 'none',
                         'message3content': 'none',
                         'message3id': 'none'
                     }) # Adds the corresponding dictionary to the data list
-            else:
+            else: # If it is not the same channel ID as the message's channel ID,
                 data.append({
-                    'channelID': f'{message.channel.id}',
-                    'message1content': f'{messageContent}',
-                    'message1id': f'{message.id}',
-                    'message2content': 'none',
-                    'message2id': 'none',
-                    'message3content': 'none',
-                    'message3id': 'none'
-                }) # Adds the corresponding dictionary to the data list
-        else: # If it is not the same channel ID as the message's channel ID,
-            data.append({
-                'channelID': f'{i["channelID"]}',
-                'message1content': f'{i["message1content"]}',
-                'message1id': f'{i["message1id"]}',
-                'message2content': f'{i["message2content"]}',
-                'message2id': f'{i["message2id"]}',
-                'message3content': f'{i["message3content"]}',
-                'message3id': f'{i["message3id"]}'
-            }) # Adds the channels original information to the data list
+                    'channelID': f'{i["channelID"]}',
+                    'message1content': f'{i["message1content"]}',
+                    'message1id': f'{i["message1id"]}',
+                    'message2content': f'{i["message2content"]}',
+                    'message2id': f'{i["message2id"]}',
+                    'message3content': f'{i["message3content"]}',
+                    'message3id': f'{i["message3id"]}'
+                }) # Adds the channels original information to the data list
     if len(data) != 0: # If the data list is not empty,
         with open(messagesFile, 'w') as f:
             json.dump(data, f) # Dump the data list into the messages.json folder
@@ -153,8 +155,10 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
         for a in susMessageChannelIDs: # For all suspicous channel IDs,
             channel: discord.TextChannel = message.guild.get_channel(int(a))
             if channel == None: # If the channel is not found, then return "channel error"
+                print('-------------------')
                 print('Channel was None again for some reason.')
-                print(channel)
+                print(f'Channel: {channel} Date: {datetime.datetime.now()}')
+                print(f'Current message content: {message.content}')
                 return 'channel error'
             for b in susMessageIDs: #Goes through all suspicous messages and deletes them if they are in the current channel
                 try:
@@ -174,6 +178,12 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
         await logChannel.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
         if timeoutError == True:
             await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This could be due to insufficient permissions, or {timeoutErrorMessage.author.display_name} being higher ranked.\n-# If you think this is a mistake, please write a bug report using /support')
+        dev = message.guild.get_member(devID)
+        if dev != None:
+            await dev.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"')
+        else:
+            dev = await message.guild.fetch_member(devID)
+            await dev.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"')
 
 @bot.event
 async def on_ready():
@@ -194,7 +204,7 @@ async def support(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.mention}, if you need support, please contact an admin!', ephemeral=True)
         return
     else:
-        await interaction.response.send_message(view=selects.supportView(),ephemeral=True)
+        await interaction.response.send_message(f'>>> Hello, {interaction.user.mention}!', view=selects.supportView(),ephemeral=True)
 
 @bot.event
 async def on_message(message: Message) -> None:
@@ -205,6 +215,7 @@ async def on_message(message: Message) -> None:
         return
     if check == 'channel error':
         print('Channel was not found.')
+        print('-------------------')
         return
 
 
