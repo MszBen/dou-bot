@@ -155,7 +155,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                 for b in range(susMessageChannelIDs.count(i) - 1):
                     susMessageChannelIDs.remove(i)
         for a in susMessageChannelIDs: # For all suspicous channel IDs,
-            channel: discord.TextChannel = message.guild.get_channel(int(a))
+            channel: discord.TextChannel = await message.guild.fetch_channel(int(a))
             if channel == None: # If the channel is not found, then return "channel error"
                 print('-------------------')
                 print('Channel was None again for some reason.')
@@ -175,7 +175,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                             timeoutErrorMessage = messageToDelete
                 except:
                     pass
-        logChannel = message.guild.get_channel(logChannelID) # Gets the channel to put the logs into
+        logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
         cleaned = str(deletedMessages).strip('[').strip(']').replace("'", "") # Cleans the deleted messages list
         await logChannel.send(f'Deleted message(s) "{cleaned}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
         if timeoutError == True:
