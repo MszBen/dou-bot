@@ -40,6 +40,9 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
     with open(channelsFile, 'r') as f: # Load channels.json
         channelsData: list = json.load(f)
         f.close()
+    
+    messagesData = [entry for entry in messagesData if entry['channelID'] in channelsData]
+
     loggedChannels: list = []
     for a in channelsData: # For all IDs in channels.json,
         if a.isalnum(): # If the ID is all numbers,
@@ -62,60 +65,59 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             'message3id': 'none'
         }) # Adds the empty dictionary to the data list
     for i in messagesData: # For channels in messages.json,
-        if i['channelID'] in channelsData:
-            if i['channelID'] == str(message.channel.id): # If the channel ID is the same as the message's channel ID,
-                if i['message1content'] != 'none': # If there is nothing logged for the first message,
-                    if i['message2content'] != 'none': # If there is nothing logged for the second message,
-                        if i['message3content'] != 'none': # If there is nothing logged for the third message,
-                            data.append({
-                                'channelID': f'{message.channel.id}',
-                                'message1content': f'{messageContent}',
-                                'message1id': f'{message.id}',
-                                'message2content': f'{i["message1content"]}',
-                                'message2id': f'{i["message1id"]}',
-                                'message3content': f'{i["message2content"]}',
-                                'message3id': f'{i["message2id"]}'
-                            }) # Adds the corresponding dictionary to the data list
-                        else:
-                            data.append({
-                                'channelID': f'{message.channel.id}',
-                                'message1content': f'{i["message1content"]}',
-                                'message1id': f'{i["message1id"]}',
-                                'message2content': f'{i["message2content"]}',
-                                'message2id': f'{i["message2id"]}',
-                                'message3content': f'{messageContent}',
-                                'message3id': f'{message.id}'
-                            }) # Adds the corresponding dictionary to the data list
+        if i['channelID'] == str(message.channel.id): # If the channel ID is the same as the message's channel ID,
+            if i['message1content'] != 'none': # If there is nothing logged for the first message,
+                if i['message2content'] != 'none': # If there is nothing logged for the second message,
+                    if i['message3content'] != 'none': # If there is nothing logged for the third message,
+                        data.append({
+                            'channelID': f'{message.channel.id}',
+                            'message1content': f'{messageContent}',
+                            'message1id': f'{message.id}',
+                            'message2content': f'{i["message1content"]}',
+                            'message2id': f'{i["message1id"]}',
+                            'message3content': f'{i["message2content"]}',
+                            'message3id': f'{i["message2id"]}'
+                        }) # Adds the corresponding dictionary to the data list
                     else:
                         data.append({
                             'channelID': f'{message.channel.id}',
                             'message1content': f'{i["message1content"]}',
                             'message1id': f'{i["message1id"]}',
-                            'message2content': f'{messageContent}',
-                            'message2id': f'{message.id}',
-                            'message3content': 'none',
-                            'message3id': 'none'
+                            'message2content': f'{i["message2content"]}',
+                            'message2id': f'{i["message2id"]}',
+                            'message3content': f'{messageContent}',
+                            'message3id': f'{message.id}'
                         }) # Adds the corresponding dictionary to the data list
                 else:
                     data.append({
                         'channelID': f'{message.channel.id}',
-                        'message1content': f'{messageContent}',
-                        'message1id': f'{message.id}',
-                        'message2content': 'none',
-                        'message2id': 'none',
+                        'message1content': f'{i["message1content"]}',
+                        'message1id': f'{i["message1id"]}',
+                        'message2content': f'{messageContent}',
+                        'message2id': f'{message.id}',
                         'message3content': 'none',
                         'message3id': 'none'
                     }) # Adds the corresponding dictionary to the data list
-            else: # If it is not the same channel ID as the message's channel ID,
+            else:
                 data.append({
-                    'channelID': f'{i["channelID"]}',
-                    'message1content': f'{i["message1content"]}',
-                    'message1id': f'{i["message1id"]}',
-                    'message2content': f'{i["message2content"]}',
-                    'message2id': f'{i["message2id"]}',
-                    'message3content': f'{i["message3content"]}',
-                    'message3id': f'{i["message3id"]}'
-                }) # Adds the channels original information to the data list
+                    'channelID': f'{message.channel.id}',
+                    'message1content': f'{messageContent}',
+                    'message1id': f'{message.id}',
+                    'message2content': 'none',
+                    'message2id': 'none',
+                    'message3content': 'none',
+                    'message3id': 'none'
+                }) # Adds the corresponding dictionary to the data list
+        else: # If it is not the same channel ID as the message's channel ID,
+            data.append({
+                'channelID': f'{i["channelID"]}',
+                'message1content': f'{i["message1content"]}',
+                'message1id': f'{i["message1id"]}',
+                'message2content': f'{i["message2content"]}',
+                'message2id': f'{i["message2id"]}',
+                'message3content': f'{i["message3content"]}',
+                'message3id': f'{i["message3id"]}'
+            }) # Adds the channels original information to the data list
     if len(data) != 0: # If the data list is not empty,
         with open(messagesFile, 'w') as f:
             json.dump(data, f) # Dump the data list into the messages.json folder
