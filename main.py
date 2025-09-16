@@ -16,6 +16,8 @@ basepath = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
 
 channelsFile = os.path.join(basepath, 'channels.json')
 messagesFile = os.path.join(basepath, 'messages.json')
+flaggedMessagesContentFile = os.path.join(basepath, 'flaggedmessages.json')
+flaggedAuthorsIDFile = os.path.join(basepath, 'flaggedauthors.json')
 
 logChannelID = 1407764620483104950
 devID = 551056526777909259
@@ -43,6 +45,76 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
     with open(channelsFile, 'r') as f: # Load channels.json
         channelsData: list = json.load(f)
         f.close()
+    with open(flaggedMessagesContentFile, 'r') as f: # Load channels.json
+        flaggedMessagesContents: list = json.load(f)
+        f.close()
+    with open(flaggedAuthorsIDFile, 'r') as f: # Load channels.json
+        flaggedAuthorsIDs: list = json.load(f)
+        f.close()
+    
+    for i in flaggedMessagesContents:
+        content: str = i
+        listContent: list = content.split('&')
+        cleanedContent: str = listContent[0]
+        if message.content == cleanedContent:
+            logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
+            if listContent[1] == 'high':
+                timeoutError = False
+                deleteError = False
+                try:
+                    await message.author.timeout(datetime.timedelta(minutes=30))
+                except:
+                    timeoutError = True
+                try:
+                    await message.delete()
+                except:
+                    deleteError = True
+                if timeoutError and deleteError:
+                    await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Attempted to timeout user and delete message, however both failed. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                elif timeoutError:
+                    await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Deleted message, however failed to timeout user. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                elif deleteError:
+                    await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user, however failed to delete message. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                else:
+                    await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user and deleted the message, as per flagging priority.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+            elif listContent[1] == 'med' or listContent[1] == 'low':
+                await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}.\n-# If you think this is a mistake, please write a bug report using /support')
+    
+    for i in flaggedAuthorsIDs:
+        content: str = i
+        listContent: list = content.split('&')
+        cleanedContent: int = int(listContent[0])
+        if message.author.id == cleanedContent:
+            logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
+            if listContent[1] == 'high':
+                timeoutError = False
+                deleteError = False
+                try:
+                    await message.author.timeout(datetime.timedelta(minutes=30))
+                except:
+                    timeoutError = True
+                try:
+                    await message.delete()
+                except:
+                    deleteError = True
+                if timeoutError and deleteError:
+                    await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Attempted to timeout user and delete message, however both failed. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                elif timeoutError:
+                    await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Deleted message, however failed to timeout user. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                elif deleteError:
+                    await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user, however failed to delete message. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+                else:
+                    await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user and deleted the message, as per flagging priority.\n-# If you think this is a mistake, please write a bug report using /support')
+                    return
+            elif listContent[1] == 'med' or listContent[1] == 'low':
+                await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}.\n-# If you think this is a mistake, please write a bug report using /support')
     
     messagesData = [entry for entry in messagesData if entry['channelID'] in channelsData]
 
@@ -363,7 +435,7 @@ async def maintenance(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
         channel = await interaction.client.fetch_channel(logChannelID)
-        await channel.send(f'>>> ### <:undermaintenance:1411291719399510117> Dou Bot is Down For Maintenance <:undermaintenance:1411291719399510117>\n<:maintenance:1411291430516686950> Either for repair or a well deserved coffee break, the developer has taken this bot down temporarily but should be back up shortly!\nWe thank you for your patience!')
+        await channel.send(f'>>> ### <:undermaintenance:1411291719399510117> Dou Bot is Down For Maintenance <:undermaintenance:1411291719399510117>\n<:maintenance:1411345913258967041> Either for repair or a well deserved coffee break, the developer has taken this bot down temporarily but should be back up shortly!\n<:maintenance:1411345913258967041>We thank you for your patience!')
         await interaction.response.send_message('Message sent!',ephemeral=True)
 
 @bot.tree.command(name='update', description='Announce an update', guild=discord.Object(id=controlGuildID))
@@ -372,6 +444,303 @@ async def update(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
         await interaction.response.send_modal(modals.updateModal())
+
+@bot.tree.command(name='flagmessage',description='Flag a message as suspicous')
+@app_commands.describe(level = 'Choose the priority level', messageid = 'Message ID to flag')
+@app_commands.choices(level=[
+    app_commands.Choice(name='High', value='high'),
+    app_commands.Choice(name='Medium', value='med'),
+    app_commands.Choice(name='Low', value='low')
+])
+async def flagchannel(interaction: discord.Interaction, level: app_commands.Choice[str], messageid: str):
+    isadmin = False
+    for i in interaction.user.roles:
+        if i.permissions.administrator:
+            isadmin = True
+    if isadmin == False:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+        return
+    else:
+        await interaction.response.defer(ephemeral=True)
+        message = None
+        for i in interaction.guild.text_channels:
+            try:
+                message = await i.fetch_message(int(messageid))
+            except:
+                pass
+        if message == None:
+            await interaction.followup.send(f'No message with the ID provided was found. Ensure this bot has the correct permissions to do this action.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+            return
+        else:
+            
+            if str(level.value) == 'high':
+                messageContent = message.content
+                messageAuthorid = str(message.author.id)
+                with open(flaggedMessagesContentFile, 'r') as f:
+                    messageContentData: list = json.load(f)
+                    f.close()
+                with open(flaggedAuthorsIDFile, 'r') as f:
+                    authorsIDData: list = json.load(f)
+                    f.close()
+                contentPresent: bool = False
+                authorIDPresent: bool = False
+                splitMessageContentData = []
+                splitAuthorIDsData = []
+                for i in messageContentData:
+                    index: str = i
+                    contentList = index.split('&')
+                    actualContent = contentList[0]
+                    splitMessageContentData.append(actualContent)
+                for i in authorsIDData:
+                    index: str = i
+                    idList = index.split('&')
+                    actualID = idList[0]
+                    splitAuthorIDsData.append(actualID)
+                if messageContent in splitMessageContentData:
+                    contentPresent = True
+                if messageAuthorid in splitAuthorIDsData:
+                    authorIDPresent = True
+                if contentPresent and authorIDPresent:
+                    await interaction.followup.send(f'This user ({message.author.mention}) **and** message content have already been flagged before and actions should have been taken when this message was sent.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                elif contentPresent:
+                    authorsIDData.append(f'{messageAuthorid}&high')
+                    await interaction.followup.send(f'This message has had it\'s contents flagged already so no action was taken there. This user ({message.author.mention}) has been added to the flagged users database (use /info flagging to find out what that means).\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                elif authorIDPresent:
+                    messageContentData.append(f'{messageContent}&high')
+                    await interaction.followup.send(f'This user ({message.author.mention}) has already been flagged so no action was taken there. This message\'s content has been added to the flagged messages database (use /info flagging to find out what that means).\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                else:
+                    authorsIDData.append(f'{messageAuthorid}&high')
+                    messageContentData.append(f'{messageContent}&high')
+                    await interaction.followup.send(f'This user ({message.author.mention}) and this messages\'s content has been added to the flagged users and flagged messages databases, respectively (use /info flagging to find out what that means).', ephemeral=True)
+                with open(flaggedMessagesContentFile, 'w') as f:
+                    json.dump(messageContentData, f)
+                    f.close
+                with open(flaggedAuthorsIDFile, 'w') as f:
+                    json.dump(authorsIDData, f)
+                    f.close
+            
+            elif str(level.value) == 'med':
+                messageContent = message.content
+                messageAuthorid = str(message.author.id)
+                with open(flaggedMessagesContentFile, 'r') as f:
+                    messageContentData: list = json.load(f)
+                    f.close()
+                with open(flaggedAuthorsIDFile, 'r') as f:
+                    authorsIDData: list = json.load(f)
+                    f.close()
+                contentPresent: bool = False
+                authorIDPresent: bool = False
+                splitMessageContentData = []
+                splitAuthorIDsData = []
+                for i in messageContentData:
+                    index: str = i
+                    contentList = index.split('&')
+                    actualContent = contentList[0]
+                    splitMessageContentData.append(actualContent)
+                for i in authorsIDData:
+                    index: str = i
+                    idList = index.split('&')
+                    actualID = idList[0]
+                    splitAuthorIDsData.append(actualID)
+                if messageContent in splitMessageContentData:
+                    contentPresent = True
+                if messageAuthorid in splitAuthorIDsData:
+                    authorIDPresent = True
+                if contentPresent and authorIDPresent:
+                    await interaction.followup.send(f'This user ({message.author.mention}) **and** message content have already been flagged before and actions should have been taken when this message was sent.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                elif contentPresent:
+                    authorsIDData.append(f'{messageAuthorid}&med')
+                    await interaction.followup.send(f'This message has had it\'s contents flagged already so no action was taken there. This user ({message.author.mention}) has been added to the flagged users database (use /info flagging to find out what that means).\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                elif authorIDPresent:
+                    messageContentData.append(f'{messageContent}&med')
+                    await interaction.followup.send(f'This user ({message.author.mention}) has already been flagged so no action was taken there. This message\'s content has been added to the flagged messages database (use /info flagging to find out what that means).\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                else:
+                    authorsIDData.append(f'{messageAuthorid}&med')
+                    messageContentData.append(f'{messageContent}&med')
+                    await interaction.followup.send(f'This user ({message.author.mention}) and this messages\'s content has been added to the flagged users and flagged messages databases, respectively (use /info flagging to find out what that means).', ephemeral=True)
+                with open(flaggedMessagesContentFile, 'w') as f:
+                    json.dump(messageContentData, f)
+                    f.close
+                with open(flaggedAuthorsIDFile, 'w') as f:
+                    json.dump(authorsIDData, f)
+                    f.close
+            
+            elif str(level.value) == 'low':
+                messageContent = message.content
+                with open(flaggedMessagesContentFile, 'r') as f:
+                    messageContentData: list = json.load(f)
+                    f.close()
+                contentPresent: bool = False
+                splitMessageContentData = []
+                for i in messageContentData:
+                    index: str = i
+                    contentList = index.split('&')
+                    actualContent = contentList[0]
+                    splitMessageContentData.append(actualContent)
+                if messageContent in splitMessageContentData:
+                    contentPresent = True
+                if contentPresent:
+                    await interaction.followup.send(f'This message has had it\'s contents flagged already so no action was taken.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+                else:
+                    messageContentData.append(f'{messageContent}&low')
+                    await interaction.followup.send(f'This messages\'s content has been added to the flagged messages database (use /info flagging to find out what that means).', ephemeral=True)
+                with open(flaggedMessagesContentFile, 'w') as f:
+                    json.dump(messageContentData, f)
+                    f.close
+            else:
+                await interaction.followup.send(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+
+@bot.tree.command(name='info', description='Access the documentation for this bot')
+@app_commands.describe(feature = 'Which feature do you require?')
+@app_commands.choices(feature=[
+    app_commands.Choice(name='flagging', value='flagging')
+])
+async def info(interaction: discord.Interaction, feature: app_commands.Choice[str]):
+    if str(feature.value) == 'flagging':
+        line = f'~~‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ~~'
+        highprior = f'`•` High Priority *-* Adds user and message content to databases. Upon *any* user sending a message with the same message content as a message flagged with high priority, the message will be deleted, the user will be timed-out and a message will be sent notifying moderators. Upon a user flagged with high priority sending a message, the message will be deleted, the user will be timed-out and a message will be sent notifying moderators.'
+        medprior = f'`•` Medium Priority *-* Adds user and message content to databases. Upon *any* user sending a message with the same message content as a message flagged with medium priority, a message will be sent notifying moderators. Upon a user flagged with medium priority sending a message, a message will be sent notifying moderators.'
+        lowprior = f'`•` Low Priority *-* Adds message content to database. Upon *any* user sending a message with the same message content as a message flagged with low priority, a message will be sent notifying moderators.'
+        embed = discord.Embed(title='Flagging', description=f'{line}\n**Flagging Priorities**\n{line}\n{highprior}\n\n{medprior}\n\n{lowprior}', color=discord.Color.blurple())
+        embed.set_author(name='Ben MS', url='https://discord.com/users/551056526777909259', icon_url='https://cdn.discordapp.com/avatars/551056526777909259/cf6026a863922f21d0e76bc304c88933?size=1024')
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+
+@bot.tree.command(name='flaggedusers', description='Edit the flagged users list')
+@app_commands.describe(method = 'How do you want to edit this list?', user = 'Which user? (optional)')
+@app_commands.choices(method=[
+    app_commands.Choice(name='Clear', value='clr'),
+    app_commands.Choice(name='Remove', value='rmve'),
+    app_commands.Choice(name='List', value='ls')
+])
+async def flaggedusers(interaction: discord.Interaction, user: Optional[discord.Member], method: app_commands.Choice[str]):
+    isadmin = False
+    for i in interaction.user.roles:
+        if i.permissions.administrator:
+            isadmin = True
+    if isadmin == False:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+        return
+    else:
+        await interaction.response.defer(ephemeral=True)
+        if method.value == 'clr':
+            clearedList = []
+            with open(flaggedAuthorsIDFile, 'w') as f:
+                json.dump(clearedList, f)
+                f.close
+            await interaction.followup.send(f'Flagged users database cleared!\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+        elif method.value == 'rmve':
+            userID = str(user.id)
+            with open(flaggedAuthorsIDFile, 'r') as f:
+                authorsIDData: list = json.load(f)
+                f.close()
+            splitAuthorIDsData = []
+            for i in authorsIDData:
+                index: str = i
+                idList = index.split('&')
+                actualID = idList[0]
+                splitAuthorIDsData.append(actualID)
+            if len(splitAuthorIDsData) == 0:
+                await interaction.followup.send(f'There are no users on the flagged users list, meaning there is no one to remove!\n-# If you think this is a mistake, please write a bug report using /support')
+                return
+            
+            if userID not in splitAuthorIDsData:
+                await interaction.followup.send(f'The user specified is not on the flagged user list.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+            else:
+                newList = []
+                for i in authorsIDData:
+                    index: str = i
+                    idList = index.split('&')
+                    actualID = idList[0]
+                    if actualID != userID:
+                        newList.append(i)
+                with open(flaggedAuthorsIDFile, 'w') as f:
+                    json.dump(newList, f)
+                    f.close
+                await interaction.followup.send(f'{user.mention} has been removed from the flagged users list!', ephemeral=True)
+        elif method.value == 'ls':
+            with open(flaggedAuthorsIDFile, 'r') as f:
+                authorsIDData: list = json.load(f)
+                f.close()
+            splitAuthorIDsData = []
+            for i in authorsIDData:
+                index: str = i
+                idList = index.split('&')
+                actualID = idList[0]
+                splitAuthorIDsData.append(actualID)
+            if len(splitAuthorIDsData) != 0:
+                cleaned = str(splitAuthorIDsData).strip('[').strip(']').replace("'", "")
+                await interaction.followup.send(f'The flagged users database contains these IDs: "{cleaned}"', ephemeral=True)
+            else:
+                await interaction.followup.send(f'There are no flagged users in the database at the moment!', ephemeral=True)
+
+@bot.tree.command(name='flaggedmessages', description='Edit the flagged messages list')
+@app_commands.describe(method = 'How do you want to edit this list?', msgcontent = 'What content? (optional)')
+@app_commands.choices(method=[
+    app_commands.Choice(name='Clear', value='clr'),
+    app_commands.Choice(name='Remove', value='rmve'),
+    app_commands.Choice(name='List', value='ls')
+])
+async def flaggedmessages(interaction: discord.Interaction, msgcontent: Optional[str], method: app_commands.Choice[str]):
+    isadmin = False
+    for i in interaction.user.roles:
+        if i.permissions.administrator:
+            isadmin = True
+    if isadmin == False:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+        return
+    else:
+        await interaction.response.defer(ephemeral=True)
+        if method.value == 'clr':
+            clearedList = []
+            with open(flaggedMessagesContentFile, 'w') as f:
+                json.dump(clearedList, f)
+                f.close
+            await interaction.followup.send(f'Flagged messages database cleared!\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+        elif method.value == 'rmve':
+            with open(flaggedMessagesContentFile, 'r') as f:
+                messagesContentData: list = json.load(f)
+                f.close()
+            splitMessageContentData = []
+            for i in messagesContentData:
+                index: str = i
+                idList = index.split('&')
+                actualContent = idList[0]
+                splitMessageContentData.append(actualContent)
+            if len(splitMessageContentData) == 0:
+                await interaction.followup.send(f'There are no messages on the flagged messages list, meaning there is no one to remove!\n-# If you think this is a mistake, please write a bug report using /support')
+                return
+            
+            if msgcontent not in splitMessageContentData:
+                await interaction.followup.send(f'The message specified is not on the flagged messages list.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
+            else:
+                newList = []
+                for i in messagesContentData:
+                    index: str = i
+                    idList = index.split('&')
+                    actualContent = idList[0]
+                    if actualContent != msgcontent:
+                        newList.append(i)
+                with open(flaggedMessagesContentFile, 'w') as f:
+                    json.dump(newList, f)
+                    f.close
+                await interaction.followup.send(f'Message "*{msgcontent}*" has been removed from the flagged users list!', ephemeral=True)
+        elif method.value == 'ls':
+            with open(flaggedMessagesContentFile, 'r') as f:
+                messagesContentData: list = json.load(f)
+                f.close()
+            splitMessageContentData = []
+            for i in messagesContentData:
+                index: str = i
+                idList = index.split('&')
+                actualContent = idList[0]
+                splitMessageContentData.append(actualContent)
+            if len(splitMessageContentData) != 0:
+                cleaned = str(splitMessageContentData).strip('[').strip(']').replace("'", "")
+                await interaction.followup.send(f'The flagged messages database contains these contents: "{cleaned}"', ephemeral=True)
+            else:
+                await interaction.followup.send(f'There are no flagged messages in the database at the moment!', ephemeral=True)
 
 
 def main() -> None:
