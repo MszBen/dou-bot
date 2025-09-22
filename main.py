@@ -19,7 +19,8 @@ messagesFile = os.path.join(basepath, 'messages.json')
 flaggedMessagesContentFile = os.path.join(basepath, 'flaggedmessages.json')
 flaggedAuthorsIDFile = os.path.join(basepath, 'flaggedauthors.json')
 
-logChannelID = 1407764620483104950
+# logChannelID = 1407764620483104950
+logChannelID = 1401253003822104739
 devID = 551056526777909259
 
 intents: Intents = Intents.default()
@@ -741,6 +742,53 @@ async def flaggedmessages(interaction: discord.Interaction, msgcontent: Optional
                 await interaction.followup.send(f'The flagged messages database contains these contents: "{cleaned}"', ephemeral=True)
             else:
                 await interaction.followup.send(f'There are no flagged messages in the database at the moment!', ephemeral=True)
+
+@bot.tree.command(name='deleteintent', description='Delete a message and notify user')
+@app_commands.describe(messageid='Message ID of the message', reason='Reason for the deletion')
+async def deleteintent(interaction: discord.Interaction, messageid: str, reason: Optional[str]):
+    isadmin = False
+    for i in interaction.user.roles:
+        if i.permissions.administrator:
+            isadmin = True
+    if isadmin == False:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+        return
+    else:
+        if messageid.isdigit():
+            await interaction.response.defer(ephemeral=True)
+            message = None
+            for i in interaction.guild.text_channels:
+                try:
+                    message: discord.Message = await i.fetch_message(int(messageid))
+                except:
+                    pass
+            if message != None:
+                try:
+                    messageContent = message.content
+                    messageAuthor = message.author
+                    await message.delete()
+                except:
+                    await interaction.followup.send(f'Failed to delete message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+                if 'hidden' in str(reason):
+                    listString: list = str(reason).split('&')
+                    actualReason: str = listString[0]
+                    await message.author.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.name}"). The admin has given this reason for this: "{actualReason}".')
+                    await interaction.followup.send(f'Message Deleted')
+                else:
+                    if reason != None:
+                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given this reason for this: "{reason}".')
+                        logChanel = await interaction.guild.fetch_channel(logChannelID)
+                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}".')
+                        await interaction.followup.send(f'Message Deleted')
+                    else:
+                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given no reason for this.')
+                        logChanel = await interaction.guild.fetch_channel(logChannelID)
+                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}".')
+                        await interaction.followup.send(f'Message Deleted')
+            else:
+                await interaction.followup.send(f'Failed to acquire message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+        else:
+            await interaction.response.send_message(f'"{messageid}" does not only consist of numbers. Please try again with the ID of the message.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
 
 
 def main() -> None:
