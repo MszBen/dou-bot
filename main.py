@@ -470,7 +470,7 @@ async def flagchannel(interaction: discord.Interaction, level: app_commands.Choi
             except:
                 pass
         if message == None:
-            await interaction.followup.send(f'No message with the ID provided was found. Ensure this bot has the correct permissions to do this action.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+            await interaction.followup.send(f'No message with the ID provided was found. Ensure this bot has the correct permissions to do this action.\n-# If this error persists, please write a bug report using /support and the error code 404', ephemeral=True)
             return
         else:
             
@@ -589,7 +589,7 @@ async def flagchannel(interaction: discord.Interaction, level: app_commands.Choi
                     json.dump(messageContentData, f)
                     f.close
             else:
-                await interaction.followup.send(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+                await interaction.followup.send(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support and the error code 01', ephemeral=True)
 
 @bot.tree.command(name='info', description='Access the documentation for this bot')
 @app_commands.describe(feature = 'Which feature do you require?')
@@ -606,7 +606,7 @@ async def info(interaction: discord.Interaction, feature: app_commands.Choice[st
         embed.set_author(name='Ben MS', url='https://discord.com/users/551056526777909259', icon_url='https://cdn.discordapp.com/avatars/551056526777909259/cf6026a863922f21d0e76bc304c88933?size=1024')
         await interaction.response.send_message(embed=embed, ephemeral=True)
     else:
-        await interaction.response.send_message(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+        await interaction.response.send_message(f'Hmmm, something didn\'t work. Please ensure you chose a correct option.\n-# If this error persists, please write a bug report using /support and the error code 02', ephemeral=True)
 
 @bot.tree.command(name='flaggedusers', description='Edit the flagged users list')
 @app_commands.describe(method = 'How do you want to edit this list?', user = 'Which user? (optional)')
@@ -768,7 +768,7 @@ async def deleteintent(interaction: discord.Interaction, messageid: str, reason:
                     messageAuthor = message.author
                     await message.delete()
                 except:
-                    await interaction.followup.send(f'Failed to delete message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+                    await interaction.followup.send(f'Failed to delete message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support and error code 403', ephemeral=True)
                 if 'hidden' in str(reason):
                     listString: list = str(reason).split('&')
                     actualReason: str = listString[0]
@@ -786,7 +786,7 @@ async def deleteintent(interaction: discord.Interaction, messageid: str, reason:
                         await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}".')
                         await interaction.followup.send(f'Message Deleted')
             else:
-                await interaction.followup.send(f'Failed to acquire message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support', ephemeral=True)
+                await interaction.followup.send(f'Failed to acquire message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support and error code 403', ephemeral=True)
         else:
             await interaction.response.send_message(f'"{messageid}" does not only consist of numbers. Please try again with the ID of the message.\n-# If you think this is a mistake, please write a bug report using /support', ephemeral=True)
 
