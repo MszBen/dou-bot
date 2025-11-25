@@ -772,19 +772,19 @@ async def deleteintent(interaction: discord.Interaction, messageid: str, reason:
                 if 'hidden' in str(reason):
                     listString: list = str(reason).split('&')
                     actualReason: str = listString[0]
-                    await message.author.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.name}"). The admin has given this reason for this: "{actualReason}".')
-                    await interaction.followup.send(f'Message Deleted')
+                    await message.author.send(f'One of your messages with the content "{messageContent}" has been deleted by either an admin or an auto-detect system. This was the reason given: "{actualReason}".\n-# If you think this is a mistake, please write a bug report using /support in the server.')
+                    await interaction.followup.send(f'Message deleted!')
                 else:
                     if reason != None:
-                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given this reason for this: "{reason}".')
+                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given this reason for this: "{reason}".\n-# If you think this is a mistake, please write a bug report using /support in the server.')
                         logChanel = await interaction.guild.fetch_channel(logChannelID)
-                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}".')
-                        await interaction.followup.send(f'Message Deleted')
+                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}" sent by "{messageAuthor.display_name}" ({messageAuthor.mention}).\n-# If you think this is a mistake, please write a bug report using /support')
+                        await interaction.followup.send(f'Message deleted!')
                     else:
-                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given no reason for this.')
+                        await messageAuthor.send(f'One of your messages with the content "{messageContent}" has been deleted by admin "{interaction.user.display_name}" ("{interaction.user.global_name}"). The admin has given no reason for this.\n-# If you think this is a mistake, please write a bug report using /support in the server.')
                         logChanel = await interaction.guild.fetch_channel(logChannelID)
-                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}".')
-                        await interaction.followup.send(f'Message Deleted')
+                        await logChanel.send(f'Admin "{interaction.user.display_name}" ("{interaction.user.mention}") has deleted a message with the content: "{messageContent}" sent by "{messageAuthor.display_name}" ({messageAuthor.mention}).\n-# If you think this is a mistake, please write a bug report using /support')
+                        await interaction.followup.send(f'Message deleted!')
             else:
                 await interaction.followup.send(f'Failed to acquire message. May be from lack of permissions, or from other bugs.\n-# If this error persists, please write a bug report using /support and error code 403', ephemeral=True)
         else:
