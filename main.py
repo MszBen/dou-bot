@@ -19,9 +19,11 @@ messagesFile = os.path.join(basepath, 'messages.json')
 flaggedMessagesContentFile = os.path.join(basepath, 'flaggedmessages.json')
 flaggedAuthorsIDFile = os.path.join(basepath, 'flaggedauthors.json')
 
-# logChannelID = 1407764620483104950
-logChannelID = 1401253003822104739
+# logChannelID = 1401253003822104739 # DEV LOG CHANNEL
+logChannelID = 1407764620483104950 # ACTUAL DOU LOG CHANNEL
 devID = 551056526777909259
+
+logChannel: discord.TextChannel
 
 intents: Intents = Intents.default()
 intents.message_content = True
@@ -36,7 +38,7 @@ def get_bot():
     return commands.Bot(command_prefix='!', intents=intents)
 
 async def checkMessage(message: Message, messageContent: str): # Check whether messages are suspicous
-    if message.author == bot.user: # If the message was sent by the bot itself, then ignores it.
+    if message.author == bot.user: # If the message was sent by the bot itself, then it ignores it.
         return
     if not messageContent: # If the message was empty (probably due to a bug) then return the string "none"
         return 'none'
@@ -58,7 +60,6 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
         listContent: list = content.split('&')
         cleanedContent: str = listContent[0]
         if message.content == cleanedContent:
-            logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
             if listContent[1] == 'high':
                 timeoutError = False
                 deleteError = False
@@ -224,6 +225,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
     
     deletedMessages = []
     timeoutError = False
+    botError = False
     timeoutErrorMessage = None
     messageAuthors = []
     deleteError = False
@@ -233,7 +235,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                 for b in range(susMessageChannelIDs.count(i) - 1):
                     susMessageChannelIDs.remove(i)
         for a in susMessageChannelIDs: # For all suspicous channel IDs,
-            channel: discord.TextChannel = await message.guild.fetch_channel(int(a))
+            channel: discord.TextChannel = message.guild.get_channel(int(a))
             if channel == None: # If the channel is not found, then return "channel error"
                 print('-------------------')
                 print('Channel was None again for some reason.')
@@ -243,12 +245,16 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             for b in susMessageIDs: #Goes through all suspicous messages and deletes them if they are in the current channel
                 try:
                     messageToDelete: Message = await channel.fetch_message(b)
-                    deletedMessages.append(f'{messageToDelete.content}')
                     messageAuthors.append(messageToDelete.author)
                     if messageToDelete != None:
                         if messageToDelete.content != '' and messageToDelete.content != None:
                             await messageToDelete.delete()
-                            if messageToDelete.author.is_timed_out() == False:
+                            deletedMessages.append(f'{messageToDelete.content}')
+                            if messageToDelete.author.bot:
+                                timeoutError = True
+                                timeoutErrorMessage = messageToDelete
+                                botError = True
+                            elif messageToDelete.author.is_timed_out() == False:
                                 try:
                                     await messageToDelete.author.timeout(datetime.timedelta(1))
                                 except:
@@ -260,8 +266,10 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                     else:
                         deleteError = True
                         break
-                except:
+                except Exception as e:
                     deleteError = True
+                    print('Delete Error:')
+                    print(e)
                     break
         if len(messageAuthors) != 0: # If the list is not empty,
             for i in messageAuthors: # Removes duplicate channels from the list
@@ -281,27 +289,38 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             if messageToDelete != None:
                 dev = message.guild.get_member(devID)
                 if dev != None:
-                    dev.send('Tried and failed to delete messages')
-                    return
+                    await dev.send('Tried and failed to delete messages')
                 else:
                     dev = await message.guild.fetch_member(devID)
                     dev.send('Tried and failed to delete messages')
-                    return
-        cleaned = str(deletedMessages).strip('[').strip(']').replace("'", "") # Cleans the deleted messages list
-        cleanedAuthorMentions = str(authorMentions).strip('[').strip(']').replace("'", "")
-        cleanedAuthorNames = str(authorNames).strip('[').strip(']').replace("'", "")
-        await logChannel.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorMentions}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
-        if timeoutError == True:
-            await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This could be due to insufficient permissions, or {timeoutErrorMessage.author.display_name} being higher ranked.\n-# If you think this is a mistake, please write a bug report using /support')
-        dev = message.guild.get_member(devID)
-        if dev != None:
-            await dev.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorNames}" for reason: "Suspected Spam"')
-        else:
-            dev = await message.guild.fetch_member(devID)
-            await dev.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorNames}" for reason: "Suspected Spam"')
+        
+        if len(deletedMessages) > 0:
+            cleaned = str(deletedMessages).strip('[').strip(']').replace("'", "") # Cleans the deleted messages list
+            cleanedAuthorMentions = str(authorMentions).strip('[').strip(']').replace("'", "")
+            cleanedAuthorNames = str(authorNames).strip('[').strip(']').replace("'", "")
+            await logChannel.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorMentions}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
+            if timeoutError == True:
+                if botError == True:
+                    await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This is because {timeoutErrorMessage.author.display_name} is a bot and therefore cannot be timed out.\n-# If you think this is a mistake, please write a bug report using /support')
+                else:
+                    await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This could be due to insufficient permissions, or {timeoutErrorMessage.author.display_name} being higher ranked.\n-# If you think this is a mistake, please write a bug report using /support')
+            dev = message.guild.get_member(devID)
+            if dev != None:
+                await dev.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorNames}" for reason: "Suspected Spam"')
+                if timeoutError == True:
+                    if botError == True:
+                        await dev.send('Also attemped to timeout user, however it failed because user was a bot.')
+                    else:
+                        await dev.send('Also attemped to timeout user, however it failed.')
+            else:
+                dev = await message.guild.fetch_member(devID)
+                await dev.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorNames}" for reason: "Suspected Spam"')
 
 @bot.event
 async def on_ready():
+    global logChannel
+    logChannel = bot.get_channel(logChannelID)
+    print("Cached channel:", logChannel)
     botName = bot.user.display_name
     botID = bot.user.id
     print(f'Logged in as {botName} ({botID})')
@@ -435,8 +454,7 @@ async def maintenance(interaction: discord.Interaction):
     if interaction.user.id != devID:
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
-        channel = await interaction.client.fetch_channel(logChannelID)
-        await channel.send(f'>>> ### <:undermaintenance:1411291719399510117> Dou Bot is Down For Maintenance <:undermaintenance:1411291719399510117>\n<:maintenance:1411345913258967041> Either for repair or a well deserved coffee break, the developer has taken this bot down temporarily but should be back up shortly!\n<:maintenance:1411345913258967041>We thank you for your patience!')
+        await logChannel.send(f'>>> ### <:undermaintenance:1411291719399510117> Dou Bot is Down For Maintenance <:undermaintenance:1411291719399510117>\n<:maintenance:1411345913258967041> Either for repair or a well deserved coffee break, the developer has taken this bot down temporarily but should be back up shortly!\n<:maintenance:1411345913258967041>We thank you for your patience!')
         await interaction.response.send_message('Message sent!',ephemeral=True)
 
 @bot.tree.command(name='update', description='Announce an update', guild=discord.Object(id=controlGuildID))
@@ -445,6 +463,15 @@ async def update(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
         await interaction.response.send_modal(modals.updateModal())
+
+@bot.tree.command(name='schedulemaintenance', description='Announce scheduled maintenance', guild=discord.Object(id=controlGuildID))
+@app_commands.describe(date = 'Enter date')
+async def schedulemaintenance(interaction: discord.Interaction, date: str):
+    if interaction.user.id != devID:
+        await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
+    else:
+        await logChannel.send(f'>>> ### <:undermaintenance:1411291719399510117> Dou Bot is Scheduled For Maintenance <:undermaintenance:1411291719399510117>\n<:maintenance:1411345913258967041> Dou Bot will be down for maintenance on **"{date}"**\n<:maintenance:1411345913258967041>We thank you for your patience!\n-# This date could possibly change! Please check back regularly!')
+        await interaction.response.send_message('Message sent!',ephemeral=True)
 
 @bot.tree.command(name='flagmessage',description='Flag a message as suspicous')
 @app_commands.describe(level = 'Choose the priority level', messageid = 'Message ID to flag')
