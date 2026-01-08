@@ -48,30 +48,30 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
     with open(channelsFile, 'r') as f: # Load channels.json
         channelsData: list = json.load(f)
         f.close()
-    with open(flaggedMessagesContentFile, 'r') as f: # Load channels.json
+    with open(flaggedMessagesContentFile, 'r') as f: # Load flaggedmessages.json
         flaggedMessagesContents: list = json.load(f)
         f.close()
-    with open(flaggedAuthorsIDFile, 'r') as f: # Load channels.json
+    with open(flaggedAuthorsIDFile, 'r') as f: # Load flaggedauthors.json
         flaggedAuthorsIDs: list = json.load(f)
         f.close()
     
-    for i in flaggedMessagesContents:
+    for i in flaggedMessagesContents: # For each flagged message...
         content: str = i
-        listContent: list = content.split('&')
-        cleanedContent: str = listContent[0]
-        if message.content == cleanedContent:
-            if listContent[1] == 'high':
+        listContent: list = content.split('&') # Split message in to two parts seperated by the "&"
+        cleanedContent: str = listContent[0] # The actual content is the first part
+        if message.content == cleanedContent: # If the message being checked is equal to the flagged message...
+            if listContent[1] == 'high': # If the second part is high threat...
                 timeoutError = False
                 deleteError = False
                 try:
-                    await message.author.timeout(datetime.timedelta(minutes=30))
+                    await message.author.timeout(datetime.timedelta(minutes=30)) # Try to timeout user
                 except:
                     timeoutError = True
                 try:
-                    await message.delete()
+                    await message.delete() # Try to delete the message
                 except:
                     deleteError = True
-                if timeoutError and deleteError:
+                if timeoutError and deleteError: # Handle all error scenarios
                     await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Attempted to timeout user and delete message, however both failed. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
                     return
                 elif timeoutError:
@@ -83,27 +83,26 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                 else:
                     await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user and deleted the message, as per flagging priority.\n-# If you think this is a mistake, please write a bug report using /support')
                     return
-            elif listContent[1] == 'med' or listContent[1] == 'low':
+            elif listContent[1] == 'med' or listContent[1] == 'low': # If the second part is medium or low threat...
                 await logChannel.send(f'Noticed message containing flagged content sent by user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}.\n-# If you think this is a mistake, please write a bug report using /support')
     
-    for i in flaggedAuthorsIDs:
+    for i in flaggedAuthorsIDs: # For each flagged user...
         content: str = i
-        listContent: list = content.split('&')
+        listContent: list = content.split('&') # Do the same as before
         cleanedContent: int = int(listContent[0])
         if message.author.id == cleanedContent:
-            logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
-            if listContent[1] == 'high':
+            if listContent[1] == 'high': # If second part is high threat...
                 timeoutError = False
                 deleteError = False
                 try:
-                    await message.author.timeout(datetime.timedelta(minutes=30))
+                    await message.author.timeout(datetime.timedelta(minutes=30)) # Try to timeout user
                 except:
                     timeoutError = True
                 try:
-                    await message.delete()
+                    await message.delete() # Try to delete message
                 except:
                     deleteError = True
-                if timeoutError and deleteError:
+                if timeoutError and deleteError: # Handle errors
                     await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Attempted to timeout user and delete message, however both failed. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
                     return
                 elif timeoutError:
@@ -112,12 +111,13 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                 elif deleteError:
                     await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user, however failed to delete message. This is probably because the user has higher permissions than the bot.\n-# If you think this is a mistake, please write a bug report using /support')
                     return
-                else:
+                else: # If all goes well, send message
                     await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}. Timed-out user and deleted the message, as per flagging priority.\n-# If you think this is a mistake, please write a bug report using /support')
                     return
-            elif listContent[1] == 'med' or listContent[1] == 'low':
+            elif listContent[1] == 'med' or listContent[1] == 'low': # If second part is medium or low threat...
                 await logChannel.send(f'Noticed message sent by flagged user {message.author.mention} in channel {message.channel.mention} at {str(message.created_at)}.\n-# If you think this is a mistake, please write a bug report using /support')
     
+    # Filter messagesData so it only includes entries belonging to channels in channelsData
     messagesData = [entry for entry in messagesData if entry['channelID'] in channelsData]
 
     loggedChannels: list = []
@@ -223,6 +223,7 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             susMessageIDs.append(i['message3id'])
             susMessageChannelIDs.append(i['channelID'])
     
+    # Prepare error variables and empty lists
     deletedMessages = []
     timeoutError = False
     botError = False
@@ -284,7 +285,6 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
                 authorNames.append(i.name)
                 authorMentions.append(i.mention)
         
-        logChannel = await message.guild.fetch_channel(logChannelID) # Gets the channel to put the logs into
         if deleteError == True:
             if messageToDelete != None:
                 dev = message.guild.get_member(devID)
@@ -299,11 +299,13 @@ async def checkMessage(message: Message, messageContent: str): # Check whether m
             cleanedAuthorMentions = str(authorMentions).strip('[').strip(']').replace("'", "")
             cleanedAuthorNames = str(authorNames).strip('[').strip(']').replace("'", "")
             await logChannel.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorMentions}" for reason: "Suspected Spam"\n-# If you think this is a mistake, please write a bug report using /support') # Creates a log for all deleted messages
+            # Handles errors
             if timeoutError == True:
                 if botError == True:
                     await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This is because {timeoutErrorMessage.author.display_name} is a bot and therefore cannot be timed out.\n-# If you think this is a mistake, please write a bug report using /support')
                 else:
                     await logChannel.send(f'Attempted to timeout "{timeoutErrorMessage.author.display_name}" ({timeoutErrorMessage.author.mention}) but failed. This could be due to insufficient permissions, or {timeoutErrorMessage.author.display_name} being higher ranked.\n-# If you think this is a mistake, please write a bug report using /support')
+            # Sends messages to dev
             dev = message.guild.get_member(devID)
             if dev != None:
                 await dev.send(f'Deleted message(s) "{cleaned}" from user(s) "{cleanedAuthorNames}" for reason: "Suspected Spam"')
@@ -366,6 +368,7 @@ async def on_message(message: Message) -> None:
 @bot.tree.command(name='addchannel', description='Add a channel to anti-raiding')
 @app_commands.describe(channel = 'Pick a channel to add')
 async def addchannel(interaction: discord.Interaction, channel: discord.TextChannel):
+    # Checks to see if user is an admin
     isadmin = False
     for i in interaction.user.roles:
         if i.permissions.administrator:
@@ -374,9 +377,12 @@ async def addchannel(interaction: discord.Interaction, channel: discord.TextChan
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
         return
     else:
+        # Loads channels.json
         with open(channelsFile, 'r') as f:
             channelsData: list = json.load(f)
             f.close()
+        # Checks to see if new channel is already in the protected channels list
+        # If no, adds it to the list, sends confirmation and saves to file
         if str(channel.id) not in channelsData:
             channelsData.append(str(channel.id))
             with open(channelsFile, 'w') as f:
@@ -391,6 +397,7 @@ async def addchannel(interaction: discord.Interaction, channel: discord.TextChan
 @bot.tree.command(name='removechannel', description='Remove a channel from anti-raiding')
 @app_commands.describe(channel = 'Pick a channel to remove')
 async def removechannel(interaction: discord.Interaction, channel: discord.TextChannel):
+    # Checks to see if user is admin
     isadmin = False
     for i in interaction.user.roles:
         if i.permissions.administrator:
@@ -399,9 +406,12 @@ async def removechannel(interaction: discord.Interaction, channel: discord.TextC
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
         return
     else:
+        # Loads channels.json
         with open(channelsFile, 'r') as f:
             channelsData: list = json.load(f)
             f.close()
+        # Checks if the channel is in the protected channel list
+        # If yes, removes channel from list and saves to file
         if str(channel.id) in channelsData:
             channelsData.remove(f'{channel.id}')
             with open(channelsFile, 'w') as f:
@@ -415,6 +425,7 @@ async def removechannel(interaction: discord.Interaction, channel: discord.TextC
 
 @bot.tree.command(name='protchannels', description='Lists all protected channels')
 async def protchannels(interaction: discord.Interaction):
+    # Checks to see if user is admin
     isadmin = False
     for i in interaction.user.roles:
         if i.permissions.administrator:
@@ -423,6 +434,7 @@ async def protchannels(interaction: discord.Interaction):
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
         return
     else:
+        # Loads channels.json, cleans list and sends list in a message
         with open(channelsFile, 'r') as f:
             channelsData: list = json.load(f)
             f.close()
@@ -436,6 +448,7 @@ async def protchannels(interaction: discord.Interaction):
 
 @bot.tree.command(name='socials', description='Get all socials of Douthepuppy')
 async def socials(interaction: discord.Interaction):
+    # Creates embeds with socials on it and sends it
     embeds = []
     twitchEmbed = discord.Embed(title='* Twitch *', description='Musician turned streamer -18, UK, Mostly play horror games and Shooters (Eg, The Forest Franchise, Marvel Rivals, Valorant, Roblox, etc.)', color=discord.Color.from_rgb(90, 62, 133), timestamp=datetime.datetime(2025, 8, 6, 15, 16))
     twitchEmbed.set_footer(text='This is up-to-date as of:')
@@ -451,6 +464,7 @@ async def socials(interaction: discord.Interaction):
 
 @bot.tree.command(name='maintenance', description='Announce maintenance', guild=discord.Object(id=controlGuildID))
 async def maintenance(interaction: discord.Interaction):
+    # Checks if user is dev, if yes, sends maintenance message
     if interaction.user.id != devID:
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
@@ -459,6 +473,7 @@ async def maintenance(interaction: discord.Interaction):
 
 @bot.tree.command(name='update', description='Announce an update', guild=discord.Object(id=controlGuildID))
 async def update(interaction: discord.Interaction):
+    # Checks if user is dev, if yes, sends update modal
     if interaction.user.id != devID:
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
@@ -467,6 +482,7 @@ async def update(interaction: discord.Interaction):
 @bot.tree.command(name='schedulemaintenance', description='Announce scheduled maintenance', guild=discord.Object(id=controlGuildID))
 @app_commands.describe(date = 'Enter date')
 async def schedulemaintenance(interaction: discord.Interaction, date: str):
+    # Checks if user is dev, if yes, sends schedules maintenance message with specified date
     if interaction.user.id != devID:
         await interaction.response.send_message(f'{interaction.user.mention}, you do not have the correct permissions to use this command!\n-# Sorry!', ephemeral=True)
     else:
